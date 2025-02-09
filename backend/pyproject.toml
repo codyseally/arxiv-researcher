@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "arxiv-researcher"
+version = "0.1.0"
+description = "ArXiv paper search with natural language processing"
+authors = ["Your Name <your.email@example.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"  # Update Python version requirement
+langchain-community = "0.0.20"  # Remove the ^ to use exact version
+fastapi = "^0.109.2"
+uvicorn = {extras = ["standard"], version = "^0.27.1"}
+langchain = "^0.1.4"
+arxiv = "^2.0.0"
+pydantic = "^2.6.1"
+python-dotenv = "^1.0.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api" 
