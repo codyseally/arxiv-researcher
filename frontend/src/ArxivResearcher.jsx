@@ -4,8 +4,10 @@ import axios from 'axios';
 const ArxivResearcher = () => {
   const [query, setQuery] = useState('');
   const [papers, setPapers] = useState([]);
+  const [transformedQuery, setTransformedQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [queryError, setQueryError] = useState(null);
 
   const handleSearch = async (e) => {
     e?.preventDefault(); // Handle both button click and form submit
@@ -13,6 +15,8 @@ const ArxivResearcher = () => {
     
     setLoading(true);
     setError(null);
+    setQueryError(null);
+    setTransformedQuery('');
     try {
       const response = await axios.post('http://localhost:8000/api/search', 
         { query: query.trim() },
@@ -22,7 +26,14 @@ const ArxivResearcher = () => {
           },
         }
       );
-      setPapers(response.data);
+      
+      if (response.data.error) {
+        setQueryError(response.data.error);
+        setPapers([]);
+      } else {
+        setPapers(response.data.papers);
+        setTransformedQuery(response.data.transformed_query);
+      }
     } catch (err) {
       console.error('Search error:', err);
       setError(err.response?.data?.detail || err.message || 'Failed to fetch papers');
@@ -38,86 +49,76 @@ const ArxivResearcher = () => {
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '20px' }}>Arxiv Researcher</h1>
-      <form onSubmit={handleSearch} style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold text-center mb-6">Arxiv Researcher</h1>
+      
+      <form onSubmit={handleSearch} className="flex justify-center mb-6">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Enter search query"
-          style={{ padding: '10px', fontSize: '16px', width: '300px', marginRight: '10px' }}
+          className="px-4 py-2 text-lg border rounded-l w-96"
         />
         <button
           type="submit"
-          style={{ 
-            padding: '10px 20px', 
-            fontSize: '16px', 
-            cursor: loading ? 'wait' : 'pointer',
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-          }}
+          className={`px-6 py-2 text-lg text-white rounded-r ${
+            loading ? 'bg-gray-500' : 'bg-blue-600 hover:bg-blue-700'
+          }`}
           disabled={loading}
         >
           {loading ? 'Searching...' : 'Search'}
         </button>
       </form>
       
-      {loading && <p style={{ textAlign: 'center' }}>Loading...</p>}
+      {loading && <p className="text-center">Loading...</p>}
+      
+      {queryError && (
+        <div className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
+          <p className="font-bold">Query Generation Error</p>
+          <p>{queryError}</p>
+        </div>
+      )}
+      
       {error && (
-        <p style={{ textAlign: 'center', color: 'red', padding: '10px', backgroundColor: '#ffebee' }}>
+        <p className="text-center text-red-600 p-4 bg-red-100 rounded">
           {error}
         </p>
       )}
+
+      {transformedQuery && (
+        <div className="mb-4 p-4 bg-gray-100 rounded">
+          <p className="text-sm text-gray-600">Original query: <span className="font-semibold">{query}</span></p>
+          <p className="text-sm text-gray-600">Transformed query: <span className="font-semibold">{transformedQuery}</span></p>
+        </div>
+      )}
       
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f2f2f2' }}>
-              <th style={{ border: '1px solid #ddd', padding: '12px 8px' }}>Title</th>
-              <th style={{ border: '1px solid #ddd', padding: '12px 8px' }}>Authors</th>
-              <th style={{ border: '1px solid #ddd', padding: '12px 8px' }}>Published</th>
-              <th style={{ border: '1px solid #ddd', padding: '12px 8px' }}>Summary</th>
-            </tr>
-          </thead>
-          <tbody>
-            {papers.length > 0 ? (
-              papers.map((paper) => (
-                <tr key={paper.arxiv_id || paper.id}>
-                  <td style={{ border: '1px solid #ddd', padding: '12px 8px' }}>
-                    <a 
-                      href={paper.pdf_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      style={{ color: '#2196F3', textDecoration: 'none' }}
-                    >
-                      {paper.title}
-                    </a>
-                  </td>
-                  <td style={{ border: '1px solid #ddd', padding: '12px 8px' }}>
-                    {paper.authors && Array.isArray(paper.authors) 
-                      ? paper.authors.map(author => typeof author === 'object' ? author.name : author).join(', ') 
-                      : ''}
-                  </td>
-                  <td style={{ border: '1px solid #ddd', padding: '12px 8px' }}>{paper.published}</td>
-                  <td style={{ border: '1px solid #ddd', padding: '12px 8px' }}>{paper.abstract || paper.summary}</td>
-                </tr>
-              ))
-            ) : (
-              !loading && (
-                <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', padding: '12px 8px' }}>
-                    No results found.
-                  </td>
-                </tr>
-              )
-            )}
-          </tbody>
-        </table>
-      </div>
+      {papers.length > 0 && (
+        <div className="space-y-6">
+          {papers.map((paper, index) => (
+            <div key={paper.arxiv_id} className="p-4 border rounded shadow-sm hover:shadow-md transition-shadow">
+              <h2 className="text-xl font-semibold mb-2">
+                <a href={paper.pdf_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                  {paper.title}
+                </a>
+              </h2>
+              <p className="text-sm text-gray-600 mb-2">
+                Authors: {paper.authors.map(a => a.name).join(', ')}
+              </p>
+              <p className="text-sm text-gray-600 mb-2">
+                Published: {paper.published}
+              </p>
+              <p className="text-sm text-gray-800 mb-2">{paper.abstract}</p>
+              <div className="text-xs text-gray-500">ID: {paper.arxiv_id}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {!loading && papers.length === 0 && !queryError && query && (
+        <p className="text-center text-gray-600">No papers found matching your query.</p>
+      )}
     </div>
   );
 };

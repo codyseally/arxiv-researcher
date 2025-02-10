@@ -82,7 +82,7 @@ The project is organized into two main components:
 2. In a new terminal, start the frontend development server:
    ```bash
    cd "arxiv researcher/frontend"
-   npm start
+   npm run dev
    ```
    The frontend will be available at http://localhost:3000
 
