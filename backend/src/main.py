@@ -32,8 +32,6 @@ async def search_papers(request: Request):
 
         # Process the query through LLM
         arxiv_query = await process_query(user_query)
-        print(f"Original query: {user_query}")
-        print(f"Transformed query: {arxiv_query}")
 
         # Check if query generation failed
         if arxiv_query.startswith("Query could not be generated"):
